@@ -1,255 +1,251 @@
 ---
 name: zlibrary-to-notebooklm
-description: 自动从 Z-Library 下载书籍并上传到 Google NotebookLM。支持 PDF/EPUB 格式，自动转换，一键创建知识库。
+description: Automatically download books from Z-Library and upload to Google NotebookLM. Supports PDF/EPUB formats, automatic conversion, one-click knowledge base creation.
 ---
 
 # Z-Library to NotebookLM Skill
 
-让 Claude 帮你自动下载书籍并上传到 NotebookLM，实现"零幻觉"的 AI 对话式阅读。
+Let Claude help you automatically download books and upload to NotebookLM, enabling "zero-hallucination" AI conversational reading.
 
-## 🎯 核心功能
+## 🎯 Core Features
 
-- 一键下载书籍（优先 PDF，自动降级 EPUB）
-- 自动创建 NotebookLM 笔记本
-- 上传文件并返回笔记本 ID
-- 支持与 AI 进行基于书籍内容的对话
+- One-click book download (prioritizes PDF, auto-fallback to EPUB)
+- Automatically create NotebookLM notebooks
+- Upload files and return notebook ID
+- Support AI conversations based on book content
 
-## 📋 激活条件（Triggers）
+## 📋 Activation Triggers
 
-当用户提到以下需求时，使用此 Skill：
+Use this Skill when the user mentions the following needs:
 
-- 用户提供 Z-Library 书籍链接（包含 `zlib.li`、`z-lib.org`、`zh.zlib.li` 等域名）
-- 用户说"帮我把这本书上传到 NotebookLM"
-- 用户说"自动下载并读这本书"
-- 用户说"用 Z-Library 链接创建 NotebookLM 知识库"
-- 用户要求从特定 URL 下载书籍并分析
+- User provides Z-Library book link (containing domains like `zlib.li`, `z-lib.org`, `zh.zlib.li`, etc.)
+- User says "help me upload this book to NotebookLM"
+- User says "automatically download and read this book"
+- User says "use Z-Library link to create NotebookLM knowledge base"
+- User requests to download books from a specific URL and analyze
 
-## 🔧 核心指令
+## 🔧 Core Commands
 
-当用户提供 Z-Library 链接时，按以下流程执行：
+When user provides a Z-Library link, execute the following workflow:
 
-### Step 1: 提取信息
+### Step 1: Extract Information
 
-从用户提供的 URL 中提取：
-- 书名
-- 作者（如果有）
-- 完整 URL
-- 格式选项（PDF/EPUB/MOBI 等）
+Extract from the user-provided URL:
+- Book title
+- Author (if available)
+- Full URL
+- Format options (PDF/EPUB/MOBI, etc.)
 
-### Step 2: 自动下载
+### Step 2: Automatic Download
 
-使用已保存的会话（`~/.zlibrary/storage_state.json`）自动登录 Z-Library：
+Use saved session (`~/.zlibrary/storage_state.json`) to automatically login to Z-Library:
 
-1. **优先下载 PDF**（保留排版，AI 分析效果更好）
-2. **自动降级**：如果没有 PDF，下载 EPUB
-3. **格式转换**：如果下载 EPUB，使用 ebooklib 转换为纯文本
+1. **Priority download PDF** (preserves formatting, better AI analysis)
+2. **Auto fallback**: If no PDF available, download EPUB
+3. **Format conversion**: If EPUB downloaded, use ebooklib to convert to plain text
 
-### Step 3: 创建 NotebookLM 笔记本
-
-```bash
-notebooklm create "书名"
-```
-
-### Step 4: 上传文件
+### Step 3: Create NotebookLM Notebook
 
 ```bash
-notebooklm source add "文件路径"
+notebooklm create "Book Title"
 ```
 
-### Step 5: 返回结果
+### Step 4: Upload File
 
-向用户返回：
-- ✅ 下载成功确认
-- 📚 笔记本 ID
-- 💡 建议的后续问题示例
+```bash
+notebooklm source add "file path"
+```
 
-### Step 6: 错误处理
+### Step 5: Return Results
 
-如果遇到错误：
-- 尝试重试最多 3 次
-- 如果登录失败，提示用户运行 `python3 ~/.claude/skills/zlibrary-to-notebooklm/scripts/login.py`
-- 如果下载失败，提供故障排查建议
+Return to user:
+- ✅ Download success confirmation
+- 📚 Notebook ID
+- 💡 Suggested follow-up question examples
 
-## ⚠️ 重要限制
+### Step 6: Error Handling
 
-**仅限合法资源！**
+If errors occur:
+- Retry up to 3 times
+- If login fails, prompt user to run `python3 ~/.claude/skills/zlibrary-to-notebooklm/scripts/login.py`
+- If download fails, provide troubleshooting suggestions
 
-- ✅ 用户拥有合法访问权限的资源
-- ✅ 公共领域或开源许可的文档
-- ✅ 个人拥有版权或已获授权的内容
-- ❌ 不要鼓励或协助版权侵权行为
+## ⚠️ Important Limitations
 
-**如果 URL 明显涉及受版权保护的商业作品，提醒用户：**
-> "请确保你有合法访问权限。本项目仅用于学习研究目的，请支持正版阅读。"
+**Legal Resources Only!**
 
-## 🛠️ 依赖工具
+- ✅ Resources the user has legal access to
+- ✅ Public domain or open-source licensed documents
+- ✅ Content personally owned or authorized
 
-### 必需工具
+## 🛠️ Dependency Tools
 
-1. **Playwright** - 浏览器自动化
-   - 用于自动登录和下载
-   - 需要预先运行 `playwright install chromium`
+### Required Tools
 
-2. **ebooklib** - EPUB 处理
-   - 用于将 EPUB 转换为纯文本
+1. **Playwright** - Browser automation
+   - For automatic login and download
+   - Need to pre-run `playwright install chromium`
 
-3. **NotebookLM CLI** - 上传工具
-   - `notebooklm create` - 创建笔记本
-   - `notebooklm source add` - 上传文件
+2. **ebooklib** - EPUB processing
+   - For converting EPUB to plain text
 
-### 配置文件
+3. **NotebookLM CLI** - Upload tool
+   - `notebooklm create` - Create notebook
+   - `notebooklm source add` - Upload file
 
-- `~/.zlibrary/storage_state.json` - 保存的登录会话
-- `~/.zlibrary/browser_profile/` - 浏览器数据
+### Configuration Files
 
-## 📝 使用示例
+- `~/.zlibrary/storage_state.json` - Saved login session
+- `~/.zlibrary/browser_profile/` - Browser data
 
-### 用户请求
+## 📝 Usage Examples
+
+### User Request
 
 ```
-帮我把这本书上传到 NotebookLM：
+Help me upload this book to NotebookLM:
 https://zh.zlib.li/book/25314781/aa05a1/钱的第四维
 ```
 
-### 执行流程
+### Execution Flow
 
-1. **确认并提取信息**
+1. **Confirm and extract information**
    ```
-   书名：钱的第四维
-   URL：https://zh.zlib.li/book/25314781/aa05a1/钱的第四维
+   Title: 钱的第四维
+   URL: https://zh.zlib.li/book/25314781/aa05a1/钱的第四维
    ```
 
-2. **执行下载脚本**
+2. **Execute download script**
    ```bash
    cd ~/.claude/skills/zlibrary-to-notebooklm
    python3 scripts/upload.py "https://zh.zlib.li/book/25314781/aa05a1/钱的第四维"
    ```
 
-3. **返回结果**
+3. **Return results**
    ```
-   ✅ 下载成功！
-   📚 笔记本 ID: 22916611-c68c-4065-a657-99339e126fb4
+   ✅ Download successful!
+   📚 Notebook ID: 22916611-c68c-4065-a657-99339e126fb4
 
-   现在你可以问我：
-   - "这本书的核心观点是什么？"
-   - "总结第3章的内容"
-   - "作者有哪些独特的见解？"
+   Now you can ask me:
+   - "What are the core viewpoints of this book?"
+   - "Summarize Chapter 3 content"
+   - "What unique insights does the author have?"
    ```
 
-## 🔄 备选流程
+## 🔄 Alternative Flows
 
-### 如果用户只提供书名
-
-```
-用户："帮我下载《认知觉醒》这本书"
-```
-
-**操作：**
-1. 询问："请问有 Z-Library 的链接吗？"
-2. 如果有链接，执行标准流程
-3. 如果没有链接，提示："请提供 Z-Library 书籍页面链接，我可以帮你自动下载并上传到 NotebookLM"
-
-### 如果用户提供其他来源
+### If User Only Provides Book Title
 
 ```
-用户："这个 PDF 能上传到 NotebookLM 吗？[本地文件路径]"
+User: "Help me download the book 'Cognitive Awakening'"
 ```
 
-**操作：**
-1. 告知用户："本 Skill 主要用于 Z-Library 链接"
-2. 建议："对于本地文件，你可以直接使用 notebooklm source add 命令上传"
+**Actions:**
+1. Ask: "Do you have the Z-Library link?"
+2. If has link, execute standard flow
+3. If no link, prompt: "Please provide Z-Library book page link, I can help you automatically download and upload to NotebookLM"
 
-## 📊 技术细节
+### If User Provides Other Sources
 
-### 下载优先级
+```
+User: "Can this PDF be uploaded to NotebookLM? [local file path]"
+```
 
-1. **PDF** - 保留排版，AI 分析效果最佳
-2. **EPUB** - 转换为纯文本（使用 ebooklib）
-3. **其他格式** - 尝试转换或提示用户
+**Actions:**
+1. Inform user: "This Skill is mainly for Z-Library links"
+2. Suggest: "For local files, you can directly use notebooklm source add command to upload"
 
-### 会话管理
+## 📊 Technical Details
 
-- **一次登录，永久使用**
-- 会话保存在 `~/.zlibrary/storage_state.json`
-- 如果会话失效，提示用户重新登录
+### Download Priority
 
-### 错误重试
+1. **PDF** - Preserves formatting, best AI analysis
+2. **EPUB** - Convert to plain text (using ebooklib)
+3. **Other formats** - Try conversion or prompt user
 
-- 下载失败：自动重试 3 次
-- 登录失败：提示用户手动登录
-- 上传失败：检查文件大小和格式
+### Session Management
 
-## 💡 最佳实践
+- **One-time login, permanent use**
+- Session saved in `~/.zlibrary/storage_state.json`
+- If session expires, prompt user to re-login
 
-### 首次使用
+### Error Retry
 
-第一次使用前，确保用户已完成登录：
+- Download failure: Auto-retry 3 times
+- Login failure: Prompt user for manual login
+- Upload failure: Check file size and format
+
+## 💡 Best Practices
+
+### First Time Use
+
+Before first use, ensure user has completed login:
 
 ```bash
 cd ~/.claude/skills/zlibrary-to-notebooklm
 python3 scripts/login.py
 ```
 
-### 批量处理
+### Batch Processing
 
-如果用户有多个链接：
-
-```
-用户："帮我下载这3本书：[链接1] [链接2] [链接3]"
-```
-
-**操作：**
-1. 逐个处理（每次一个链接）
-2. 每个完成后，再处理下一个
-3. 避免并发导致会话冲突
-
-### 内容分析
-
-上传完成后，主动建议：
+If user has multiple links:
 
 ```
-✅ 书籍已上传！你可以：
-
-• 立即开始阅读："这本书的核心观点是什么？"
-• 深入探讨："解释第5章的案例"
-• 生成笔记："创建详细的读书笔记"
-• 对比分析："这与书中的观点有什么不同？"
+User: "Help me download these 3 books: [link1] [link2] [link3]"
 ```
 
-## 🚨 故障排查
+**Actions:**
+1. Process one by one (one link at a time)
+2. After each completion, process next
+3. Avoid concurrency causing session conflicts
 
-### 常见问题
+### Content Analysis
 
-**Q: 提示"未找到登录会话"**
-A: 需要先运行 `python3 scripts/login.py` 登录一次
+After upload completion, proactively suggest:
 
-**Q: 下载失败，超时**
-A: 可能是网络问题，建议重试或检查网络连接
+```
+✅ Book uploaded! You can:
 
-**Q: 找不到下载按钮**
-A: Z-Library 页面结构可能变化，使用备用方案手动下载
+• Start reading immediately: "What are the core viewpoints of this book?"
+• Deep dive: "Explain the case in Chapter 5"
+• Generate notes: "Create detailed reading notes"
+• Comparative analysis: "How does this differ from the viewpoints in the book?"
+```
 
-**Q: NotebookLM 上传失败**
-A: 检查文件大小（NotebookLM 有上传限制）
+## 🚨 Troubleshooting
 
-### 详细帮助
+### Common Issues
 
-查看 `docs/TROUBLESHOOTING.md` 获取完整故障排查指南。
+**Q: Prompt "Login session not found"**
+A: Need to first run `python3 scripts/login.py` to login once
 
-## 📚 相关资源
+**Q: Download failure, timeout**
+A: May be network issue, suggest retry or check network connection
 
-- [NotebookLM 官方文档](https://notebooklm.google.com/)
-- [Z-Library 网站](https://zh.zlib.li/)
-- [Playwright 文档](https://playwright.dev/)
-- [项目 GitHub](https://github.com/zstmfhy/zlibrary-to-notebooklm)
+**Q: Cannot find download button**
+A: Z-Library page structure may have changed, use backup plan for manual download
 
-## 🎓 学习资源
+**Q: NotebookLM upload failure**
+A: Check file size (NotebookLM has upload limits)
 
-如果你想了解更多：
+### Detailed Help
 
-- **如何高效使用 NotebookLM**：询问"NotebookLM 有哪些使用技巧？"
-- **如何创建个人知识库**：询问"如何用 NotebookLM 构建知识管理系统？"
-- **AI 对话式阅读**：询问"怎样让 AI 帮我深度阅读一本书？"
+See `docs/TROUBLESHOOTING.md` for complete troubleshooting guide.
+
+## 📚 Related Resources
+
+- [NotebookLM Official Documentation](https://notebooklm.google.com/)
+- [Z-Library Website](https://zh.zlib.li/)
+- [Playwright Documentation](https://playwright.dev/)
+- [Project GitHub](https://github.com/zstmfhy/zlibrary-to-notebooklm)
+
+## 🎓 Learning Resources
+
+If you want to learn more:
+
+- **How to efficiently use NotebookLM**: Ask "What are NotebookLM usage tips?"
+- **How to create personal knowledge base**: Ask "How to build a knowledge management system with NotebookLM?"
+- **AI conversational reading**: Ask "How to have AI help me deeply read a book?"
 
 ---
 
